@@ -1,0 +1,18 @@
+{
+  "task_id": "easy",
+  "description": "No traffic spikes, predictable routes.",
+  "max_steps": 8,
+  "cost_per_km": 1.0,
+  "max_delay_per_delivery": 12.0,
+  "max_cost_per_delivery": 14.0,
+  "orders": [
+    {"order_id": 1, "driver_location": [0, 0], "pickup": [1, 1], "drop": [4, 3], "deadline_minutes": 20, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.1, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 4.8, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.4, "traffic_factor": 1.0}]},
+    {"order_id": 2, "driver_location": [1, 0], "pickup": [2, 1], "drop": [5, 3], "deadline_minutes": 20, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.3, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 5.0, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.7, "traffic_factor": 1.0}]},
+    {"order_id": 3, "driver_location": [1, 1], "pickup": [2, 2], "drop": [5, 4], "deadline_minutes": 21, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.0, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 4.6, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.2, "traffic_factor": 1.0}]},
+    {"order_id": 4, "driver_location": [2, 1], "pickup": [3, 2], "drop": [6, 4], "deadline_minutes": 21, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.5, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 5.1, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.8, "traffic_factor": 1.0}]},
+    {"order_id": 5, "driver_location": [2, 2], "pickup": [3, 3], "drop": [6, 5], "deadline_minutes": 22, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.2, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 4.9, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.6, "traffic_factor": 1.0}]},
+    {"order_id": 6, "driver_location": [3, 2], "pickup": [4, 3], "drop": [7, 5], "deadline_minutes": 22, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.4, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 5.0, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.5, "traffic_factor": 1.0}]},
+    {"order_id": 7, "driver_location": [3, 3], "pickup": [4, 4], "drop": [7, 6], "deadline_minutes": 23, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.6, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 5.2, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 5.8, "traffic_factor": 1.0}]},
+    {"order_id": 8, "driver_location": [4, 3], "pickup": [5, 4], "drop": [8, 6], "deadline_minutes": 23, "restaurant_wait": 2, "weather_penalty": 0.0, "traffic_level": 0.1, "routes": [{"route_id": 0, "distance_km": 4.7, "traffic_factor": 1.0}, {"route_id": 1, "distance_km": 5.3, "traffic_factor": 1.0}, {"route_id": 2, "distance_km": 6.0, "traffic_factor": 1.0}]}
+  ]
+}

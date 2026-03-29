@@ -1,0 +1,43 @@
+name: routebrain-env
+description: Deterministic last-mile route decision simulation for OpenEnv validation.
+entrypoint: app.main:app
+
+actions:
+  type: object
+  required:
+    - route_choice
+  properties:
+    route_choice:
+      type: integer
+      minimum: 0
+    assignments:
+      type: array
+    route_updates:
+      type: array
+
+observations:
+  type: object
+  properties:
+    time_step:
+      type: integer
+    task_id:
+      type: string
+    driver_location:
+      type: array
+    current_order:
+      type: object
+    metrics:
+      type: object
+
+step_response:
+  type: object
+  required:
+    - observation
+    - reward
+    - done
+    - info
+
+tasks:
+  - easy
+  - medium
+  - hard

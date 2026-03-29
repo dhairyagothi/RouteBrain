@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RouteBrain Simulator</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: #fffdf7;
+      --ink: #1c2a3a;
+      --muted: #5e6d7f;
+      --accent: #e85d04;
+      --accent-2: #2a9d8f;
+      --border: #e2d9cc;
+      --good: #2a9d8f;
+      --warn: #ff6d00;
+      --bad: #c1121f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 20%, #ffe8c2 0%, transparent 35%),
+        radial-gradient(circle at 90% 10%, #ffd6d6 0%, transparent 30%),
+        radial-gradient(circle at 30% 90%, #d3f3ee 0%, transparent 35%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      letter-spacing: 0.5px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    button, select {
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    button.success {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin: 8px 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff4df;
+      border: 1px solid #ffd8a8;
+      color: #5b3f17;
+      font-size: 14px;
+    }
+
+    .status.good {
+      background: #e5f7f4;
+      border-color: #a8e4dc;
+      color: #13423d;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .metric .value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .route-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .route-btn {
+      text-align: left;
+      width: 100%;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+
+    .route-btn:hover { transform: translateY(-1px); }
+    .route-btn.best { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+
+    .legend {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .timeline {
+      max-height: 560px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #f0e7da;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #fff7ea;
+      z-index: 1;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .tag.good { background: #d8f3ee; color: #0f5c53; }
+    .tag.bad { background: #ffd7db; color: #8f1028; }
+
+    .explain {
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      font-size: 14px;
+      color: #32465a;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="panel">
+      <h1>RouteBrain Live Simulator</h1>
+      <h2>Visualize what the agent is doing each step</h2>
+
+      <div class="controls">
+        <select id="taskSelect"></select>
+        <select id="vehicleSelect"></select>
+        <button class="primary" id="resetBtn">Reset Task</button>
+        <button class="success" id="autoBtn">Auto Play Best Route</button>
+        <button id="graderBtn">Get Final Score</button>
+      </div>
+
+      <div id="status" class="status">Click Reset Task to start a new episode.</div>
+
+      <div class="grid">
+        <div class="metric"><div class="label">Session ID</div><div class="value" id="sessionId" style="font-size:14px;word-break:break-all;">-</div></div>
+        <div class="metric"><div class="label">Task Progress</div><div class="value" id="progress">0 / 0</div></div>
+        <div class="metric"><div class="label">Step Reward</div><div class="value" id="lastReward">-</div></div>
+        <div class="metric"><div class="label">Fleet Snapshot</div><div class="value" id="driverLoc" style="font-size:14px;">-</div></div>
+      </div>
+
+      <h2 style="margin-top:14px;">Current Order</h2>
+      <div id="orderBox" class="explain">No active order.</div>
+
+      <h2 style="margin-top:14px;">Choose Route</h2>
+      <div id="routeList" class="route-list"></div>
+      <div class="legend">Green outline marks the best ETA route from simulator heuristic.</div>
+
+      <h2 style="margin-top:14px;">How Step Works</h2>
+      <div class="explain">
+        1) You choose a route_choice.<br>
+        2) Environment validates action and simulates ETA/cost/delay.<br>
+        3) Reward is computed from speed, delay, cost, and penalties.<br>
+        4) Metrics are updated and next order appears.<br>
+        5) At end, /grader returns deterministic score in [0, 1].
+      </div>
+
+      <h2 style="margin-top:14px;">Human Summary</h2>
+      <div id="humanSummary" class="explain">Reset a task to see a plain-language explanation.</div>
+    </section>
+
+    <section class="panel">
+      <h1 style="font-size:24px;">Episode Timeline</h1>
+      <h2>Each row is one /step call</h2>
+      <div class="timeline">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Order</th>
+              <th>Vehicle</th>
+              <th>Chosen</th>
+              <th>Best</th>
+              <th>ETA</th>
+              <th>Delay</th>
+              <th>Reward</th>
+              <th>Validity</th>
+            </tr>
+          </thead>
+          <tbody id="timelineBody"></tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top:14px;">Final Grader</h2>
+      <div class="grid">
+        <div class="metric"><div class="label">Score</div><div class="value" id="score">-</div></div>
+        <div class="metric"><div class="label">Success Rate</div><div class="value" id="success">-</div></div>
+        <div class="metric"><div class="label">Delay Norm</div><div class="value" id="delayNorm">-</div></div>
+        <div class="metric"><div class="label">Cost Norm</div><div class="value" id="costNorm">-</div></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      sessionId: null,
+      observation: null,
+      done: false,
+      autoPlaying: false,
+      timeline: []
+    };
+
+    const taskSelect = document.getElementById("taskSelect");
+    const vehicleSelect = document.getElementById("vehicleSelect");
+    const statusBox = document.getElementById("status");
+    const routeList = document.getElementById("routeList");
+    const timelineBody = document.getElementById("timelineBody");
+
+    function setStatus(text, isGood = false) {
+      statusBox.textContent = text;
+      statusBox.className = isGood ? "status good" : "status";
+    }
+
+    function fmt(n) {
+      if (n === null || n === undefined) return "-";
+      return Number(n).toFixed(2);
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      if (!response.ok) {
+        let detail = response.statusText;
+        try {
+          const body = await response.json();
+          detail = body.detail || JSON.stringify(body);
+        } catch (_) {}
+        throw new Error(detail);
+      }
+      return response.json();
+    }
+
+    function dynamicEta(route, order, timeStep) {
+      const trafficLevel = Number(order.traffic_level || 0);
+      const weatherPenalty = Number(order.weather_penalty || 0);
+      const weatherIndex = Math.max(0, Math.min(2, weatherPenalty / 5.0));
+      const routeBucket = Number(route.route_id || 0) % 3;
+      let trafficWeight = 1.0;
+      let weatherWeight = 0.25;
+      if (routeBucket === 0) {
+        trafficWeight = 1.00;
+        weatherWeight = 0.15;
+      } else if (routeBucket === 1) {
+        trafficWeight = 0.55;
+        weatherWeight = 0.45;
+      } else {
+        trafficWeight = 0.75;
+        weatherWeight = 0.25;
+      }
+      const rushMultiplier = (timeStep % 6 === 2 || timeStep % 6 === 3) ? 1.15 : 1.0;
+      const externalMultiplier = 1.0 + (trafficLevel * trafficWeight * rushMultiplier) + (weatherIndex * weatherWeight * 0.6);
+      return route.distance_km * 3.0 * route.traffic_factor * externalMultiplier + Number(order.restaurant_wait || 0) + weatherPenalty;
+    }
+
+    function pickupEta(vehicleLocation, pickup) {
+      return (Math.abs(Number(vehicleLocation[0]) - Number(pickup[0])) + Math.abs(Number(vehicleLocation[1]) - Number(pickup[1]))) * 1.2;
+    }
+
+    function chooseBestAction(order, obs) {
+      if (!order || !order.routes || order.routes.length === 0) return { route_choice: 0, vehicle_id: 0, score: Infinity };
+      const fleet = (obs && obs.fleet) ? obs.fleet : [];
+      const timeStep = Number((obs && obs.time_step) || 0);
+      const deadline = Number(order.deadline_minutes || 0);
+      const trafficLevel = Number(order.traffic_level || 0);
+
+      if (!fleet.length) {
+        let bestRoute = order.routes[0];
+        let bestScore = Infinity;
+        for (const route of order.routes) {
+          const eta = dynamicEta(route, order, timeStep);
+          const delay = Math.max(0, eta - deadline);
+          const cost = route.distance_km * (1 + trafficLevel);
+          const score = (delay * 8.0) + eta + (0.2 * cost);
+          if (score < bestScore) {
+            bestScore = score;
+            bestRoute = route;
+          }
+        }
+        return { route_choice: Number(bestRoute.route_id), vehicle_id: 0, score: bestScore };
+      }
+
+      let best = { route_choice: Number(order.routes[0].route_id), vehicle_id: Number(fleet[0].vehicle_id), score: Infinity };
+      for (const vehicle of fleet) {
+        const vLoc = vehicle.location || [0, 0];
+        const vWait = Number(vehicle.available_in_minutes || 0);
+        const pickup = pickupEta(vLoc, order.pickup || [0, 0]);
+
+        for (const route of order.routes) {
+          const travel = dynamicEta(route, order, timeStep);
+          const eta = vWait + pickup + travel;
+          const delay = Math.max(0, eta - deadline);
+          const cost = route.distance_km * (1 + trafficLevel);
+          const score = (delay * 8.0) + eta + (0.2 * cost);
+          if (score < best.score) {
+            best = { route_choice: Number(route.route_id), vehicle_id: Number(vehicle.vehicle_id), score };
+          }
+        }
+      }
+      return best;
+    }
+
+    function pickBestRoute(order) {
+      if (!order || !order.routes || order.routes.length === 0) return -1;
+      return chooseBestAction(order, state.observation).route_choice;
+    }
+
+    function renderObservation() {
+      const obs = state.observation;
+      document.getElementById("sessionId").textContent = state.sessionId || "-";
+      document.getElementById("lastReward").textContent = state.timeline.length ? fmt(state.timeline[state.timeline.length - 1].reward) : "-";
+
+      if (!obs) {
+        document.getElementById("progress").textContent = "0 / 0";
+        document.getElementById("driverLoc").textContent = "-";
+        document.getElementById("orderBox").innerHTML = "No active order.";
+        routeList.innerHTML = "";
+        return;
+      }
+
+      document.getElementById("progress").textContent = `${obs.time_step} / ${obs.max_steps}`;
+      const fleet = obs.fleet || [];
+      if (fleet.length) {
+        document.getElementById("driverLoc").textContent = fleet
+          .map(v => `V${v.vehicle_id}@[${v.location.join(",")}] t+${fmt(v.available_in_minutes)}`)
+          .join(" | ");
+      } else {
+        document.getElementById("driverLoc").textContent = `[${obs.driver_location.join(", ")}]`;
+      }
+
+      vehicleSelect.innerHTML = "";
+      if (fleet.length) {
+        for (const v of fleet) {
+          const option = document.createElement("option");
+          option.value = String(v.vehicle_id);
+          option.textContent = `Vehicle ${v.vehicle_id} (free in ${fmt(v.available_in_minutes)}m)`;
+          vehicleSelect.appendChild(option);
+        }
+      } else {
+        const option = document.createElement("option");
+        option.value = "0";
+        option.textContent = "Vehicle 0";
+        vehicleSelect.appendChild(option);
+      }
+
+      const order = obs.current_order;
+      if (!order) {
+        document.getElementById("orderBox").innerHTML = "Episode complete. Use Get Final Score or reset.";
+        routeList.innerHTML = "";
+        return;
+      }
+
+      document.getElementById("orderBox").innerHTML = `
+        <b>Order ${order.order_id}</b><br>
+        Pickup: [${order.pickup.join(", ")}], Drop: [${order.drop.join(", ")}]<br>
+        Deadline: ${order.deadline_minutes} min, Traffic: ${order.traffic_level}, Weather: ${order.weather_penalty}<br>
+        External: traffic_index=${fmt(obs.external_factors.traffic_index)}, weather_index=${fmt(obs.external_factors.weather_index)}, rush_hour=${obs.external_factors.rush_hour}
+      `;
+
+      const bestId = pickBestRoute(order);
+      routeList.innerHTML = "";
+      for (const route of order.routes) {
+        const selectedVehicleId = Number(vehicleSelect.value || 0);
+        const vehicle = (obs.fleet || []).find(v => Number(v.vehicle_id) === selectedVehicleId) || null;
+        const wait = vehicle ? Number(vehicle.available_in_minutes || 0) : 0;
+        const pEta = vehicle ? pickupEta(vehicle.location || [0, 0], order.pickup || [0, 0]) : 0;
+        const eta = wait + pEta + dynamicEta(route, order, Number(obs.time_step || 0));
+        const btn = document.createElement("button");
+        btn.className = "route-btn" + (route.route_id === bestId ? " best" : "");
+        btn.innerHTML = `Route ${route.route_id} | distance=${route.distance_km}km | traffic_factor=${route.traffic_factor} | eta=${fmt(eta)}m`;
+        btn.disabled = state.done;
+        btn.addEventListener("click", () => doStep(route.route_id, selectedVehicleId));
+        routeList.appendChild(btn);
+      }
+    }
+
+    function renderTimeline() {
+      timelineBody.innerHTML = "";
+      state.timeline.forEach((row, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${row.order_id}</td>
+          <td>${row.vehicle_id ?? "-"}</td>
+          <td>${row.selected_route_id}</td>
+          <td>${row.best_route_id}</td>
+          <td>${fmt(row.eta_minutes)}</td>
+          <td>${fmt(row.delay_minutes)}</td>
+          <td>${fmt(row.reward)}</td>
+          <td>${row.invalid_action ? '<span class="tag bad">invalid</span>' : '<span class="tag good">valid</span>'}</td>
+        `;
+        timelineBody.appendChild(tr);
+      });
+    }
+
+    async function loadTasks() {
+      try {
+        const result = await api("/tasks");
+        taskSelect.innerHTML = "";
+        for (const task of result.tasks) {
+          const option = document.createElement("option");
+          option.value = task;
+          option.textContent = task;
+          taskSelect.appendChild(option);
+        }
+      } catch (error) {
+        setStatus(`Failed to load tasks: ${error.message}`);
+      }
+    }
+
+    async function resetEpisode() {
+      try {
+        const taskId = taskSelect.value;
+        const result = await api("/reset", {
+          method: "POST",
+          body: JSON.stringify({ task_id: taskId })
+        });
+        state.sessionId = result.session_id;
+        state.observation = result.observation;
+        state.done = false;
+        state.timeline = [];
+        renderObservation();
+        renderTimeline();
+        setStatus(`Session created for task '${taskId}'. Start choosing routes.`, true);
+
+        document.getElementById("score").textContent = "-";
+        document.getElementById("success").textContent = "-";
+        document.getElementById("delayNorm").textContent = "-";
+        document.getElementById("costNorm").textContent = "-";
+      } catch (error) {
+        setStatus(`Reset failed: ${error.message}`);
+      }
+    }
+
+    async function doStep(routeChoice, vehicleId) {
+      if (!state.sessionId || state.done) return;
+      try {
+        const result = await api("/step", {
+          method: "POST",
+          body: JSON.stringify({
+            session_id: state.sessionId,
+            action: { route_choice: routeChoice, vehicle_id: vehicleId }
+          })
+        });
+
+        state.observation = result.observation;
+        state.done = result.done;
+
+        state.timeline.push({
+          ...result.info,
+          reward: result.reward
+        });
+
+        renderObservation();
+        renderTimeline();
+
+        const latenessText = result.info.delay_minutes > 0
+          ? `late by ${fmt(result.info.delay_minutes)} min`
+          : "on time";
+        document.getElementById("humanSummary").innerHTML =
+          `Order <b>${result.info.order_id}</b>: dispatched <b>Vehicle ${result.info.vehicle_id}</b> on route <b>${result.info.selected_route_id}</b>. ` +
+          `ETA <b>${fmt(result.info.eta_minutes)} min</b> (pickup ${fmt(result.info.pickup_eta_minutes)}, route ${fmt(result.info.travel_eta_minutes)}, queue ${fmt(result.info.queue_wait_minutes)}), ` +
+          `which is <b>${latenessText}</b>. ` +
+          `Reward for this decision: <b>${fmt(result.reward)}</b>.`;
+
+        if (state.done) {
+          setStatus("Episode completed. Click 'Get Final Score'.", true);
+        } else {
+          setStatus(`Step ${state.observation.time_step} completed. Reward ${fmt(result.reward)}.`, true);
+        }
+      } catch (error) {
+        setStatus(`Step failed: ${error.message}`);
+      }
+    }
+
+    async function fetchGrade() {
+      if (!state.sessionId) {
+        setStatus("Reset the environment first.");
+        return;
+      }
+      try {
+        const result = await api(`/grader?session_id=${encodeURIComponent(state.sessionId)}`);
+        document.getElementById("score").textContent = fmt(result.score);
+        document.getElementById("success").textContent = fmt(result.components.success_rate);
+        document.getElementById("delayNorm").textContent = fmt(result.components.delay_norm);
+        document.getElementById("costNorm").textContent = fmt(result.components.cost_norm);
+        const verdict = result.score >= 0.7 ? "good" : (result.score >= 0.45 ? "okay" : "needs improvement");
+        document.getElementById("humanSummary").innerHTML =
+          `Final score is <b>${fmt(result.score)}</b>, which is <b>${verdict}</b>. ` +
+          `Success ${fmt(result.components.success_rate)}, delay norm ${fmt(result.components.delay_norm)}, ` +
+          `cost norm ${fmt(result.components.cost_norm)}.`;
+        setStatus(`Final score computed: ${fmt(result.score)}.`, true);
+      } catch (error) {
+        setStatus(`Grader failed: ${error.message}`);
+      }
+    }
+
+    async function autoPlay() {
+      if (!state.sessionId) {
+        setStatus("Reset the environment first.");
+        return;
+      }
+      if (state.autoPlaying) return;
+      state.autoPlaying = true;
+      document.getElementById("autoBtn").disabled = true;
+
+      try {
+        while (!state.done) {
+          const order = state.observation && state.observation.current_order;
+          if (!order) break;
+          const action = chooseBestAction(order, state.observation);
+          await doStep(action.route_choice, action.vehicle_id);
+          await new Promise((resolve) => setTimeout(resolve, 220));
+        }
+      } finally {
+        state.autoPlaying = false;
+        document.getElementById("autoBtn").disabled = false;
+      }
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", resetEpisode);
+    document.getElementById("autoBtn").addEventListener("click", autoPlay);
+    document.getElementById("graderBtn").addEventListener("click", fetchGrade);
+    vehicleSelect.addEventListener("change", renderObservation);
+
+    loadTasks();
+  </script>
+</body>
+</html>
