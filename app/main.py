@@ -103,7 +103,10 @@ def favicon() -> Response:
 
 
 @app.post("/reset", response_model=ResetResponse)
-def reset_environment(request: ResetRequest) -> ResetResponse:
+def reset_environment(request: ResetRequest | None = None) -> ResetResponse:
+    if request is None:
+        request = ResetRequest()
+
     _cleanup_sessions()
     task_id = request.task_id or DEFAULT_TASK_ID
     if task_id not in task_store.list_tasks():
