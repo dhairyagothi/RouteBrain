@@ -1,6 +1,31 @@
+---
+title: RouteBrain
+emoji: "🚚"
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # RouteBrain
 
 RouteBrain is a deterministic, OpenEnv-compliant environment for evaluating AI decision making in last-mile delivery.
+
+## Hugging Face Space Deploy
+
+This repo is ready for a Docker Space.
+
+1. Create Space: `Dhairyagothi/RouteBrain` with SDK set to `Docker`.
+2. Add Space secrets/variables:
+	- `API_BASE_URL`
+	- `MODEL_NAME`
+	- `HF_TOKEN`
+	- `ROUTEBRAIN_URL` (optional)
+	- `MAX_STEPS` (optional)
+3. Push this repository contents to the Space repo.
+
+The container listens on port `7860` as required by Hugging Face Spaces.
 
 The environment simulates route selection under operational constraints such as traffic, weather impact, wait time, delivery deadlines, and route cost. An agent receives structured observations and returns structured actions. The environment advances with a strict reset/step/state loop and produces both step rewards and a final grader score.
 
