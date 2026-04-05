@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 
 from app.env import RouteEnv
@@ -97,6 +97,11 @@ def simulator_ui() -> FileResponse:
     return FileResponse(WEB_UI_PATH)
 
 
+@app.get("/favicon.ico")
+def favicon() -> Response:
+    return Response(status_code=204)
+
+
 @app.post("/reset", response_model=ResetResponse)
 def reset_environment(request: ResetRequest) -> ResetResponse:
     _cleanup_sessions()
@@ -113,6 +118,14 @@ def reset_environment(request: ResetRequest) -> ResetResponse:
     SESSIONS[session_id].last_access = time.time()
 
     return ResetResponse(session_id=session_id, observation=observation, info=info)
+
+
+@app.get("/reset", response_model=ResetResponse)
+def reset_environment_get(
+    task_id: str = Query(DEFAULT_TASK_ID),
+    session_id: str | None = Query(default=None),
+) -> ResetResponse:
+    return reset_environment(ResetRequest(task_id=task_id, session_id=session_id))
 
 
 @app.post("/step", response_model=StepResponse)
