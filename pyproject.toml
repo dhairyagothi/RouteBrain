@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "routebrain"
+version = "1.0.0"
+description = "Deterministic OpenEnv-compatible routing benchmark environment"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "RouteBrain" }
+]
+dependencies = [
+  "fastapi==0.116.1",
+  "uvicorn==0.35.0",
+  "pydantic==2.11.7",
+  "requests==2.32.5",
+  "openai>=1.0.0",
+  "python-dotenv==1.1.1",
+  "openenv-core>=0.2.0"
+]
+
+[project.scripts]
+server = "server.app:main"

@@ -1,0 +1,2 @@
+# Generated placeholder lockfile for OpenEnv packaging validation in environments without uv CLI.
+# In CI, run `uv lock` to regenerate a full lock.

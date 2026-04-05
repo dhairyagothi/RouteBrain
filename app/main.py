@@ -4,6 +4,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -16,6 +17,7 @@ from app.schemas import (
     GraderResponse,
     ResetRequest,
     ResetResponse,
+    Observation,
     StateResponse,
     StepRequest,
     StepResponse,
@@ -56,6 +58,38 @@ def _get_session_env(session_id: str) -> RouteEnv:
 @app.get("/")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "routebrain"}
+
+
+@app.get("/health")
+def openenv_health() -> dict[str, str]:
+    return {"status": "healthy"}
+
+
+@app.get("/metadata")
+def openenv_metadata() -> dict[str, str]:
+    return {
+        "name": "routebrain-env",
+        "description": "Deterministic last-mile route decision simulation for OpenEnv validation.",
+    }
+
+
+@app.get("/schema")
+def openenv_schema() -> dict[str, Any]:
+    return {
+        "action": Action.model_json_schema(),
+        "observation": Observation.model_json_schema(),
+        "state": {"type": "object"},
+    }
+
+
+@app.post("/mcp")
+def openenv_mcp(payload: dict[str, Any]) -> dict[str, Any]:
+    req_id = payload.get("id")
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "result": {"status": "ok"},
+    }
 
 
 @app.get("/simulator")

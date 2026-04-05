@@ -10,6 +10,10 @@ actions:
     route_choice:
       type: integer
       minimum: 0
+    vehicle_id:
+      type: integer
+      minimum: 0
+      nullable: true
     assignments:
       type: array
     route_updates:
@@ -24,6 +28,10 @@ observations:
       type: string
     driver_location:
       type: array
+    fleet:
+      type: array
+    external_factors:
+      type: object
     current_order:
       type: object
     metrics:

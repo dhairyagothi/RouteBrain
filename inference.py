@@ -14,7 +14,9 @@ load_dotenv()
 ROUTEBRAIN_URL = os.getenv("ROUTEBRAIN_URL", "http://localhost:7860")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+API_KEY = HF_TOKEN or os.getenv("API_KEY", "")
+BENCHMARK = os.getenv("ROUTEBRAIN_BENCHMARK", "routebrain")
 MAX_STEPS = int(os.getenv("MAX_STEPS", "20"))
 
 
@@ -160,46 +162,75 @@ def call_grader(session_id: str) -> dict[str, Any]:
 
 
 def run_task(task_id: str, client: OpenAI | None) -> float:
-    reset_payload = call_reset(task_id)
-    session_id = reset_payload["session_id"]
-    observation = reset_payload["observation"]
+    print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}")
 
-    for _ in range(MAX_STEPS):
-        if observation.get("current_order") is None:
-            break
+    steps = 0
+    rewards: list[float] = []
+    score = 0.0
+    success = False
+    episode_error: str | None = None
 
-        action_payload: dict[str, int]
-        if client is None:
-            action_payload = fallback_action(observation)
-        else:
-            try:
-                action_payload = llm_action(client, observation)
-            except Exception:
+    try:
+        reset_payload = call_reset(task_id)
+        session_id = reset_payload["session_id"]
+        observation = reset_payload["observation"]
+
+        for step_number in range(1, MAX_STEPS + 1):
+            if observation.get("current_order") is None:
+                break
+
+            action_payload: dict[str, int]
+            if client is None:
                 action_payload = fallback_action(observation)
+            else:
+                try:
+                    action_payload = llm_action(client, observation)
+                except Exception:
+                    action_payload = fallback_action(observation)
 
-        step_payload = call_step(session_id, action_payload)
-        observation = step_payload["observation"]
-        if bool(step_payload["done"]):
-            break
+            step_payload = call_step(session_id, action_payload)
+            reward = float(step_payload["reward"])
+            done = bool(step_payload["done"])
+            info = step_payload.get("info", {})
+            last_action_error = info.get("last_action_error")
+            error_str = "null" if last_action_error is None else str(last_action_error)
+            action_str = json.dumps(action_payload, separators=(",", ":"))
 
-    grade = call_grader(session_id)
-    score = float(grade["score"])
-    print(f"task={task_id} score={score:.4f}")
-    return score
+            print(
+                f"[STEP] step={step_number} action={action_str} reward={reward:.2f} "
+                f"done={'true' if done else 'false'} error={error_str}"
+            )
+
+            rewards.append(reward)
+            steps = step_number
+            observation = step_payload["observation"]
+            if done:
+                break
+
+        grade = call_grader(session_id)
+        score = float(grade["score"])
+        success = 0.0 <= score <= 1.0
+        return score
+    except Exception as exc:
+        episode_error = str(exc)
+        success = False
+        return score
+    finally:
+        rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+        print(
+            f"[END] success={'true' if success else 'false'} steps={steps} "
+            f"score={score:.2f} rewards={rewards_str}"
+        )
 
 
 def main() -> None:
     client: OpenAI | None = None
-    if GROQ_API_KEY:
-        client = OpenAI(api_key=GROQ_API_KEY, base_url=API_BASE_URL)
+    if API_KEY:
+        client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
 
     tasks = ["easy", "medium", "hard"]
-    scores: list[float] = []
     for task_id in tasks:
-        scores.append(run_task(task_id, client))
-
-    avg = sum(scores) / max(1, len(scores))
-    print(f"average_score={avg:.4f}")
+        run_task(task_id, client)
 
 
 if __name__ == "__main__":
