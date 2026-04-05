@@ -20,6 +20,19 @@ def _route_sensitivity(route_id: int) -> tuple[float, float]:
     return 0.75, 0.25
 
 
+def _temporal_route_multiplier(route_id: int, time_step: int, traffic_level: float, weather_index: float) -> float:
+    route_kind = int(route_id) % 3
+    phase = (int(time_step) + int(route_id)) % 5
+
+    if route_kind == 0 and phase in (1, 2):
+        return 1.10 + (0.08 * traffic_level)
+    if route_kind == 1 and phase in (0, 4):
+        return 1.05 + (0.10 * weather_index)
+    if route_kind == 2 and phase == 3:
+        return 1.08 + (0.05 * (traffic_level + weather_index))
+    return 1.0
+
+
 def infer_external_factors(order: dict[str, Any], time_step: int) -> dict[str, Any]:
     traffic_index = clamp(float(order.get("traffic_level", 0.0)), 0.0, 2.0)
     weather_index = clamp(float(order.get("weather_penalty", 0.0)) / 5.0, 0.0, 2.0)
@@ -45,7 +58,9 @@ def route_eta_minutes(
     traffic_weight, weather_weight = _route_sensitivity(route_id)
     rush_multiplier = 1.15 if (int(time_step) % 6) in (2, 3) else 1.0
     weather_index = clamp(weather_penalty / 5.0, 0.0, 2.0)
+    temporal_multiplier = _temporal_route_multiplier(route_id, time_step, traffic_level, weather_index)
     external_multiplier = 1.0 + (traffic_level * traffic_weight * rush_multiplier) + (weather_index * weather_weight * 0.6)
+    external_multiplier *= temporal_multiplier
     return (base_travel * traffic_factor * external_multiplier) + restaurant_wait + weather_penalty
 
 

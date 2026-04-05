@@ -31,6 +31,8 @@ class RouteEnv:
             "driver_location": list(fleet[0]["location"]) if fleet else list(orders[0]["driver_location"]),
             "fleet": fleet,
             "sim_clock_minutes": 0.0,
+            "order_interval_minutes": float(task.get("order_interval_minutes", self._default_order_interval(str(task["task_id"]))),
+            ),
             "done": False,
             "metrics": {
                 "completed_orders": 0,
@@ -89,7 +91,7 @@ class RouteEnv:
         selected_vehicle["location"] = list(order["drop"])
         selected_vehicle["deliveries_completed"] = int(selected_vehicle["deliveries_completed"]) + 1
 
-        self._state["sim_clock_minutes"] = sim_clock + 4.0
+        self._state["sim_clock_minutes"] = sim_clock + float(self._state["order_interval_minutes"])
         self._state["driver_location"] = list(selected_vehicle["location"])
         self._state["time_step"] += 1
         self._state["done"] = self._state["time_step"] >= self._state["max_steps"]
@@ -203,7 +205,7 @@ class RouteEnv:
             return fleet
 
         task_id = str(task.get("task_id", "medium"))
-        count = 2 if task_id == "easy" else (3 if task_id == "medium" else 4)
+        count = 3 if task_id == "easy" else (4 if task_id == "medium" else 5)
         anchor = list(task["orders"][0].get("driver_location", [0, 0]))
         fleet = []
         for idx in range(count):
@@ -216,3 +218,10 @@ class RouteEnv:
                 }
             )
         return fleet
+
+    def _default_order_interval(self, task_id: str) -> float:
+        if task_id == "easy":
+            return 9.0
+        if task_id == "medium":
+            return 7.0
+        return 5.0

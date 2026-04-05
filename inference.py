@@ -40,7 +40,17 @@ def estimate_eta(route: dict[str, Any], order: dict[str, Any]) -> float:
         traffic_weight, weather_weight = 0.75, 0.25
 
     rush_multiplier = 1.15 if (int(order.get("order_id", 0)) % 6) in (2, 3) else 1.0
+    phase = (int(order.get("order_id", 0)) + int(route.get("route_id", 0))) % 5
+    temporal_multiplier = 1.0
+    if rid == 0 and phase in (1, 2):
+        temporal_multiplier = 1.10 + (0.08 * traffic_level)
+    elif rid == 1 and phase in (0, 4):
+        temporal_multiplier = 1.05 + (0.10 * weather_index)
+    elif rid == 2 and phase == 3:
+        temporal_multiplier = 1.08 + (0.05 * (traffic_level + weather_index))
+
     external_multiplier = 1.0 + (traffic_level * traffic_weight * rush_multiplier) + (weather_index * weather_weight * 0.6)
+    external_multiplier *= temporal_multiplier
     return (
         float(route["distance_km"]) * 3.0 * float(route["traffic_factor"]) * external_multiplier
         + float(order["restaurant_wait"])

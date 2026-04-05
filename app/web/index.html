@@ -350,7 +350,16 @@
         weatherWeight = 0.25;
       }
       const rushMultiplier = (timeStep % 6 === 2 || timeStep % 6 === 3) ? 1.15 : 1.0;
-      const externalMultiplier = 1.0 + (trafficLevel * trafficWeight * rushMultiplier) + (weatherIndex * weatherWeight * 0.6);
+      const phase = (Number(timeStep) + Number(route.route_id || 0)) % 5;
+      let temporalMultiplier = 1.0;
+      if (routeBucket === 0 && (phase === 1 || phase === 2)) {
+        temporalMultiplier = 1.10 + (0.08 * trafficLevel);
+      } else if (routeBucket === 1 && (phase === 0 || phase === 4)) {
+        temporalMultiplier = 1.05 + (0.10 * weatherIndex);
+      } else if (routeBucket === 2 && phase === 3) {
+        temporalMultiplier = 1.08 + (0.05 * (trafficLevel + weatherIndex));
+      }
+      const externalMultiplier = (1.0 + (trafficLevel * trafficWeight * rushMultiplier) + (weatherIndex * weatherWeight * 0.6)) * temporalMultiplier;
       return route.distance_km * 3.0 * route.traffic_factor * externalMultiplier + Number(order.restaurant_wait || 0) + weatherPenalty;
     }
 
